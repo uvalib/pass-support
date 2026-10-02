@@ -1,0 +1,46 @@
+#
+# buildspec.yml
+#
+# Builds the LibraOpen deposit-services image.
+# Clones terraform-infrastructure, then builds from the epass compose files.
+# pass-deposit-services/libraopen/Dockerfile overlays the LibraOpen mapper,
+# overlays the LibraOpen mapper, installs pass-core-test-config, and packages
+# deposit-core. The result is tagged and pushed to ECR.
+#
+
+version: 0.2
+
+env:
+  git-credential-helper: yes
+  variables:
+    PASS_VERSION: 2.6.0-SNAPSHOT
+    PASS_CORE_REF: main
+
+phases:
+  pre_build:
+    commands:
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $CONTAINER_REGISTRY
+      - BUILD_VERSION=$(date --date="@$(echo $CODEBUILD_START_TIME | cut -c1-10)" +"%Y%m%d%H%M%S")
+      - COMMIT_TAG=gitcommit-$CODEBUILD_RESOLVED_SOURCE_VERSION
+      - git clone --depth 1 https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/uvalib/terraform-infrastructure.git
+      - PASS_SUPPORT_DIR=$CODEBUILD_SRC_DIR
+      - SOURCE_IMAGE=uvalib/deposit-services-core:$PASS_VERSION
+      - echo "SOURCE_IMAGE=$SOURCE_IMAGE BUILD_VERSION=$BUILD_VERSION COMMIT_TAG=$COMMIT_TAG PASS_SUPPORT_DIR=$PASS_SUPPORT_DIR"
+
+  build:
+    commands:
+      - cd $CODEBUILD_SRC_DIR/terraform-infrastructure/epass.library.virginia.edu/staging/ansible/config
+      - docker compose -f docker-compose-deposit.yml -f docker-compose-uvalib.yml build deposit-services
+      - docker tag $SOURCE_IMAGE $CONTAINER_REGISTRY/$CONTAINER_IMAGE:latest
+      - docker tag $SOURCE_IMAGE $CONTAINER_REGISTRY/$CONTAINER_IMAGE:build-$BUILD_VERSION
+      - docker tag $SOURCE_IMAGE $CONTAINER_REGISTRY/$CONTAINER_IMAGE:$COMMIT_TAG
+      - docker images
+      # Just testing for now.
+      #- docker push $CONTAINER_REGISTRY/$CONTAINER_IMAGE:latest
+      #- docker push $CONTAINER_REGISTRY/$CONTAINER_IMAGE:build-$BUILD_VERSION
+      #- docker push $CONTAINER_REGISTRY/$CONTAINER_IMAGE:$COMMIT_TAG
+      #- aws --region=$AWS_REGION ssm put-parameter --name /containers/$CONTAINER_IMAGE/latest --value build-$BUILD_VERSION --type String --overwrite
+
+#
+# end of file
+#
