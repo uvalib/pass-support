@@ -24,7 +24,7 @@ phases:
       - COMMIT_TAG=gitcommit-$CODEBUILD_RESOLVED_SOURCE_VERSION
       - git clone --depth 1 https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/uvalib/terraform-infrastructure.git
       - PASS_SUPPORT_DIR=$CODEBUILD_SRC_DIR
-      - SOURCE_IMAGE=uvalib/pass-deposit-services-core:$PASS_VERSION
+      - SOURCE_IMAGE=$CONTAINER_REGISTRY/uvalib/pass-deposit-services-core:$PASS_VERSION
       - echo "SOURCE_IMAGE=$SOURCE_IMAGE BUILD_VERSION=$BUILD_VERSION COMMIT_TAG=$COMMIT_TAG PASS_SUPPORT_DIR=$PASS_SUPPORT_DIR"
 
   build:
