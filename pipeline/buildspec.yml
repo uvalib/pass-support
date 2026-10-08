@@ -29,7 +29,7 @@ phases:
   build:
     commands:
       - cd $CODEBUILD_SRC_DIR/terraform-infrastructure/epass.library.virginia.edu/staging/ansible/config
-      - docker compose -f docker-compose-deposit.yml build deposit-services
+      - docker compose -f docker-compose-core-ui.yml -f docker-compose-deposit.yml build deposit-services
       - docker tag $SOURCE_IMAGE $CONTAINER_REGISTRY/$CONTAINER_IMAGE:latest
       - docker tag $SOURCE_IMAGE $CONTAINER_REGISTRY/$CONTAINER_IMAGE:build-$BUILD_VERSION
       - docker tag $SOURCE_IMAGE $CONTAINER_REGISTRY/$CONTAINER_IMAGE:$COMMIT_TAG
